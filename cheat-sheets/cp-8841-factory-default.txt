@@ -1,0 +1,14 @@
+1,
+//Press # when you power on the phone
+
+2,
+//You will see the Headset, Speaker and Mute will light on and then light off
+
+3,
+//When you see only Headset and Speaker turn on again, press 123456789*0# in sequence
+
+4,
+//After you pressed the first digit 1, you will see Speaker turn off
+
+5,
+//After all the numbers are input completely in sequence, you will see Mute button turns on to indicate phone begin to do the factory reset
