@@ -1,0 +1,170 @@
+1, eigrp named mode
+{r15,r16,r17,sw5,sw6}: 
+router ei CCIE
+add ipv4 au 45678
+
+net 123.15.15.15 0.0.0.0
+net 123.20.1.0 0.0.0.255
+
+af-interface e0/1
+authentication mode hmac ccie
+af-interface e0/2
+authentication mode hmac ccie
+
+
+2, ebgp+eigrp+redistribution
+{r15}:
+router bgp 45678
+no au
+no syn
+bgp router-id 123.15.15.15
+no bgp default ipv4-unicast
+
+add ipv4
+nei 103.2.45.1 remot 10003
+nei 103.2.45.1 ac
+
+agg 123.20.1.0 255.255.255.0 sum
+
+redis eigrp 45678
+
+router ei CCIE
+add ipv4 au 45678
+topo base
+redis bgp 45678 metric 10000 100 255 1 1500
+
+
+3, ppp
+{r18,r19}: 
+int s4/0
+ip vrf for LOCALSP
+ip add 203.3.18.2 255.255.255.252
+no sh
+enca ppp
+ppp chap host ACME-R18
+ppp chap pass CCIE
+
+no peer neighbor-route
+serial restart-delay 0
+
+
+4, ebgp
+{r16,r17,r18,r19}: 
+router bgp 45678
+no au
+no syn
+bgp router-id 123.16.16.16
+no bgp default ipv4-uni
+
+add ipv4 vrf LOCALSP
+nei 203.3.16.1 remot 20003
+nei 203.3.16.1 ac
+
+
+5, dmvpn(mgre+nhrp+ipsec)+eigrp
+{r17}: //r17 is the dmvpn hub
+int tun 0
+tun vrf LOCALSP
+tun mode gre multipoint
+tun so e0/0
+ip add 10.18.19.1 255.255.255.0
+
+band 1000
+delay 1000
+ip mtu 1400
+ip tcp adjust-mss 1360
+
+ip nhrp network-id 45678
+ip nhrp map multicast dynamic
+ip nhrp redirect
+
+ip nhrp authentication 45678key
+ip nhrp holdtime 300
+
+router ei CCIE
+add ipv4 au 45678
+net 10.18.19.1 0.0.0.0
+
+af-interface tun 0
+no split-horizon
+
+{r18,r19}: //r18 and r19 are the dmvpn spokes
+int tun 0
+tun vrf LOCALSP
+tun mode gre multipoint
+tun so s4/0
+ip add 10.18.19.18 255.255.255.0
+
+band 1000
+delay 1000
+ip mtu 1400
+ip tcp adjust-mss 1360
+
+ip nhrp network-id 34567
+ip nhrp nhs 10.18.19.1
+ip nhrp map multicast 203.3.17.2
+ip nhrp map 10.18.19.1 203.3.17.2
+ip nhrp shortcut
+
+ip nhrp authentication 45678key
+ip nhrp holdtime 300
+
+router ei 45678
+no au
+net 123.18.18.18 0.0.0.0
+net 10.2.18.0 0.0.0.255
+net 10.18.19.18 0.0.0.0
+
+eigrp stub
+
+{r17,r18,r19}: 
+crypto isakmp en
+
+crypto isakmp policy 10
+encr aes
+auth pre
+group 2
+
+crypto keyring KR vrf LOCALSP
+pre-shared-key add 0.0.0.0 0.0.0.0 key CCIE
+
+crypto ipsec transform-set CCIEXFORM esp-aes
+mode trans
+
+crypto ipsec profile DMVPNPROFILE
+set transform-set CCIEXFORM
+
+int tun 0
+tun protection ipsec profile DMVPNPROFILE
+
+
+6, multicast
+{r15,r16,r17,r18,r19,sw5}: 
+/*
+sw5 has 2 pim-enabled interfaces: int vlan 5, int vlan 55
+r15 has 3 pim-enabled interfaces: e0/1, e0/2, lo0
+r16 has 2 pim-enabled interfaces: e0/1, e0/2
+r17 has 3 pim-enabled interfaces: e0/1, e0/2, tun0
+r18 has 2 pim-enabled interfaces: e0/0, tun0
+r19 has 2 pim-enabled interfaces: e0/0, tun0
+*/
+ip multicast-routing
+
+int vlan 5
+ip pim sp
+int vlan 55
+ip pim sp
+
+{r15}: 
+int lo0
+ip pim rp-candidate lo0
+ip pim bsr-candidate lo0
+
+{r18,r19}: 
+int e0/0
+ip igmp join-group 232.1.1.1
+
+
+7, shell processing
+{r17}:
+shell processing full

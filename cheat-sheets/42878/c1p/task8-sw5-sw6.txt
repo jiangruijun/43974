@@ -1,0 +1,20 @@
+1, vtp->vlan+trunk->stp
+{sw5,sw6}: 
+vtp domain CCIE
+vtp mode server
+vtp ver 2
+vtp pass CCIErocks?
+
+
+{sw5}:
+vlan 5,55
+
+{sw6}:
+vlan 6,66
+
+//Proceed to do vlan port assignments and trunking
+
+
+{sw5,sw6}: 
+spanning-tree portfast default
+spanning-tree portfast bpduguard default

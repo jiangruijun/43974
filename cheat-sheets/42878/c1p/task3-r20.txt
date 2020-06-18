@@ -1,0 +1,85 @@
+1, bgp->banner+ssh->nat
+{r20}:
+router bgp 65112
+no au
+no syn
+bgp router-id 123.20.20.20
+no bgp default ipv4-uni
+
+nei 10.120.12.1 remot 12345
+nei 10.120.12.5 remot 12345
+nei 10.120.13.1 remot 12345
+nei 10.120.13.5 remot 12345
+nei 10.120.14.1 remot 12345
+nei 10.120.14.5 remot 12345
+nei 10.120.15.1 remot 12345
+nei 10.120.15.5 remot 12345
+nei 10.120.99.1 remot 12345
+nei 10.120.99.5 remot 12345
+
+add ipv4
+agg 10.0.0.0 255.0.0.0 sum
+agg 123.0.0.0 255.0.0.0 sum
+
+net 123.20.20.20 mask 255.255.255.255
+net 10.1.20.0 mask 255.255.255.128
+
+nei 10.120.12.1 ac
+nei 10.120.12.1 default-ori
+nei 10.120.12.5 ac
+nei 10.120.12.5 default-ori
+nei 10.120.13.1 ac
+nei 10.120.13.1 default-ori
+nei 10.120.13.5 ac
+nei 10.120.13.5 default-ori
+nei 10.120.14.1 ac
+nei 10.120.14.1 default-ori
+nei 10.120.14.5 ac
+nei 10.120.14.5 default-ori
+nei 10.120.15.1 ac
+nei 10.120.15.1 default-ori
+nei 10.120.15.1 wei 10
+nei 10.120.15.5 ac
+nei 10.120.15.5 default-ori
+nei 10.120.99.1 ac
+nei 10.120.99.5 ac
+nei 10.120.99.5 wei 10
+
+do clear ip bgp * soft
+
+
+banner login $WARNING! ACCESS RESTRICTED!$
+
+ip domain name acme.org
+username ijnruu pri 1 pass ccie
+
+crypto key generate rsa
+1024
+ip ssh maxstartups 5
+ip ssh logging events
+
+access-list 22 per 123.10.2.0 0.0.0.255
+
+line vty 0 4
+login local
+transport input ssh
+access-class 22 in
+
+
+access-list 12 per 10.1.0.0 0.0.255.255
+access-list 12 per 10.2.0.0 0.0.255.255
+ip nat inside source list 12 inter lo0 overload
+
+int e2/0.99
+ip nat out
+int e3/0.99
+ip nat out
+
+int range e2/0.12 - e2/0.15
+ip nat in
+int range e3/0.12 - e3/0.15
+ip nat in
+int e1/0
+ip nat in
+int e0/0
+ip nat in

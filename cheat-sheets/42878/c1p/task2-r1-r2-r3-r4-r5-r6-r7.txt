@@ -1,0 +1,181 @@
+1, ospf
+{r1,r2,r3,r4,r5,r6,r7}: //{r1}: max-metric router-lsa
+router ospf 12345
+router-id 123.1.1.1
+net 123.1.1.1 0.0.0.0 a 0
+net 123.10.1.2 0.0.0.0 a 0
+net 123.10.1.5 0.0.0.0 a 0
+
+max-metric router-lsa
+
+
+2, mpls+vrf
+{r1,r2,r3,r4,r5,r6,r7}: //{r2,r3,r6,r7}: no mpls ip propagate-ttl
+ip cef
+mpls ip
+mpls label pro ldp
+mpls ldp router-id lo0
+
+int range e0/1-2
+mpls ip
+
+no mpls ip propagate-ttl
+
+{r2,r3,r6,r7}: 
+/* 
+r2 has 5 vpn: GREEN, BLUE, RED, YELLOW, INET
+r3 has 5 vpn: GREEN, BLUE, RED, YELLOW, INET
+r6 has 3 vpn: GREEN, BLUE, INET 
+r7 has 3 vpn: RED, BLUE, INET
+*/
+ip vrf GREEN
+rd 65111:12
+route-target 12:12
+ip vrf BLUE
+rd 65111:13
+route-target 13:13
+ip vrf RED
+rd 65111:14
+route-target 14:14
+ip vrf YELLOW
+rd 45678:15
+route-target 15:15
+ip vrf INET
+rd 30000:99
+route-target 99:99
+
+{r2,r3}: 
+int e0/3
+no sh
+int e0/3.12
+ip vrf for GREEN
+enca do 12
+ip add 10.120.12.5 255.255.255.252
+int e0/3.13
+ip vrf for BLUE
+enca do 13
+ip add 10.120.13.5 255.255.255.252
+int e0/3.14
+ip vrf for RED
+enca do 14
+ip add 10.120.14.5 255.255.255.252
+int e0/3.15
+ip vrf for YELLOW
+enca do 15
+ip add 10.120.15.5 255.255.255.252
+int e0/3.99
+ip vrf for INET
+enca do 99
+ip add 10.120.99.5 255.255.255.252
+
+
+3, bgp
+{r1}:
+router bgp 12345
+no au
+no syn
+bgp router-id 123.1.1.1
+no bgp default ipv4-unicast
+
+nei iBGP peer-group
+nei iBGP remot 12345
+nei iBGP upda lo0
+
+nei 123.2.2.2 peer-group iBGP
+nei 123.3.3.3 peer-group iBGP
+nei 123.6.6.6 peer-group iBGP
+nei 123.7.7.7 peer-group iBGP
+
+add ipv4
+nei iBGP route-reflector-client
+nei 123.2.2.2 ac
+nei 123.3.3.3 ac
+nei 123.6.6.6 ac
+nei 123.7.7.7 ac
+
+add vpnv4
+nei iBGP route-reflector-client
+nei 123.2.2.2 ac
+nei 123.3.3.3 ac
+nei 123.6.6.6 ac
+nei 123.7.7.7 ac
+
+{r2,r3}: 
+ip prefix-list 123 per 123.0.0.0/8 le 32
+
+router bgp 12345
+no au
+no syn
+bgp router-id 123.2.2.2
+no bgp default ipv4-uni
+
+nei 123.1.1.1 remot 12345
+nei 123.1.1.1 up lo0
+
+add ipv4
+nei 123.1.1.1 ac
+
+add vpnv4
+nei 123.1.1.1 ac
+
+add ipv4 vrf GREEN
+nei 10.120.12.2 remot 65112
+nei 10.120.12.2 ac
+nei 101.1.123.1 remot 10001
+nei 101.1.123.1 ac
+
+add ipv4 vrf BLUE
+nei 10.120.13.2 remot 65112
+nei 10.120.13.2 ac
+nei 101.1.123.1 remot 10001
+nei 101.1.123.1 ac
+
+add ipv4 vrf RED
+nei 10.120.14.2 remot 65112
+nei 10.120.14.2 ac
+nei 101.1.123.1 remot 10001
+nei 101.1.123.1 ac
+
+add ipv4 vrf YELLOW
+nei 10.120.15.2 remot 65112
+nei 10.120.15.2 ac
+nei 101.1.123.1 remot 10001
+nei 101.1.123.1 ac
+
+add ipv4 vrf INET
+nei 10.120.99.2 remot 65112
+nei 10.120.99.2 ac
+nei 101.1.123.1 remot 10001
+nei 101.1.123.1 ac
+nei 101.1.123.1 prefix-list 123 out
+
+{r6,r7}: 
+ip prefix-list 123 per 123.0.0.0/8 le 32
+
+router bgp 12345
+no au
+no syn
+bgp router-id 123.6.6.6
+no bgp default ipv4-uni
+
+nei 123.1.1.1 remot 12345
+nei 123.1.1.1 up lo0
+
+add ipv4
+nei 123.1.1.1 ac
+
+add vpnv4
+nei 123.1.1.1 ac
+
+add ipv4 vrf GREEN
+nei 201.1.123.1 remot 20001
+nei 201.1.123.1 ac
+
+add ipv4 vrf BLUE
+nei 201.1.123.1 remot 20001
+nei 201.1.123.1 ac
+
+add ipv4 vrf INET
+nei 201.1.123.1 remot 20001
+nei 201.1.123.1 ac
+nei 201.1.123.1 prefix-list 123 out

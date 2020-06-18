@@ -1,0 +1,15 @@
+1, ebgp
+{r12,r13,r14}: //{r13}: nei 202.2.13.1 wei 10
+router bgp 65111
+no au
+no sy
+bgp router-id 123.12.12.12
+no bgp default ipv4
+
+nei 201.1.12.1 remot 20001
+
+add ipv4 
+nei 201.1.12.1 ac
+
+net 123.12.12.12 mask 255.255.255.255
+net 10.1.12.0 mask 255.255.255.0

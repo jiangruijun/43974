@@ -1,0 +1,32 @@
+1, vtp->vlan+trunk->mst
+{sw3,sw4}: //{sw4}: vtp mode client
+vtp domain CCIE
+vtp ver 2
+vtp mode ser
+vtp pass CCIErocks?
+
+
+vlan 89,38,49,34,310,411,111,999
+
+//Proceed to do vlan port assignments and trunking
+
+
+spanning-tree portfast default
+spanning-tree portfast bpduguard default
+spanning-tree mode mst
+spanning-tree mst configuration
+
+name CCIE
+rev 1
+ins 1 vlan 89,49,411,111,999
+ins 2 vlan 38,34,310
+
+spanning-tree mst 1 pri 0
+spanning-tree mst 2 pri 4096
+
+
+2, port-security
+{sw3}:
+int range e0/0-3
+switchport port-security   
+switchport port-security mac-address sticky

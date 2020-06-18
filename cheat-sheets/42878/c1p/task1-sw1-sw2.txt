@@ -1,0 +1,25 @@
+1, vtp->vlan+trunk->mst
+{sw1,sw2}:
+vtp domain CCIE
+vtp ver 2
+vtp mode transparent
+vtp pass CCIErocks?
+
+
+vlan 23,24,35,14,15,46,57,67,999
+
+//Proceed to do vlan port assignments and trunking
+
+
+spanning-tree portfast default
+spanning-tree portfast bpduguard default
+
+spanning-tree mode mst
+spanning-tree mst configuration
+name CCIE
+rev 1
+instance 1 vlan 15,23,35,57,67,999
+instance 2 vlan 14,24,46
+
+spanning-tree mst 1 pri 0
+spanning-tree mst 2 pri 4096

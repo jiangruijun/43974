@@ -1,0 +1,62 @@
+1, ospfv3 //sw4 is the dr, sw3 is the bdr
+/*
+   sw3-----------------sw4
+    |                   |
+    |                   |
+    |                   |
+   r10                 r11
+*/
+{r10,r11,sw3,sw4}: 
+ipv6 unicast-routing
+
+ipv6 general-prefix CCIE 2001:cc1e:beef::/48
+
+router ospfv3 1
+router-id 123.10.10.10
+
+int lo0
+ospfv3 1 ipv6 a 11
+int e0/2
+ospfv3 1 ipv6 a 11
+
+{sw3,sw4}: //{sw4}: ospfv3 1 ipv6 pri 255
+int vlan 34
+ospfv3 1 ipv6 pri 254
+
+
+2, bgp(ipv6)+ospfv3+redistribution
+{r10,r11}: 
+router bgp 34567
+add ipv6
+nei 2001:cc1e:8bad:1061::1 remot 20001
+redis ospf 1 mat in ex include-connected
+
+router ospfv3 1
+add ipv6 uni
+redis bgp 34567
+
+{r12,r14}: 
+ipv6 unicast-routing
+
+ipv6 general-prefix CCIE 2001:cc1e:beef::/48
+
+router bgp 65111
+add ipv6
+nei 2001:cc1e:8bad:6112::1 remot 20001
+
+net 2001:CC1E:BEEF::12/128
+net 2001:CC1E:BEEF:12:10:1:12:1/128
+
+
+3, ntp
+{sw3,r10,r12}:
+ntp authenticate
+ntp authentication-key 1 md5 CCIE
+ntp trusted-key 1 
+ntp source lo0
+
+{sw3}:
+ntp master
+
+{r10,r12}:
+ntp server 2001:CC1E:BEEF::203 key 1 source lo0
